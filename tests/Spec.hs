@@ -34,15 +34,15 @@ tests = testGroup
     closeWaits :: Assertion
     closeWaits = do
         (successes, failures) <- runPool_ True
-                                          (Just 200)
-                                          [Log 1 50, Log 2 100, Log 3 1000]
+                                          (Just 500)
+                                          [Log 1 0, Log 2 200, Log 3 2000]
         successes @?= [1, 2, 3]
         failures @?= []
 
     killExitsEarly :: Assertion
     killExitsEarly = do
         (successes, failures) <- runPool_ False
-                                          (Just 200)
-                                          [Log 1 50, Log 2 100, Log 3 1000]
+                                          (Just 500)
+                                          [Log 1 0, Log 2 200, Log 3 3000]
         successes @?= [1, 2]
         failures @?= []
