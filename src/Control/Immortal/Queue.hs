@@ -5,6 +5,48 @@
 library to build a pool of worker threads that process a queue of tasks
 asynchronously.
 
+First build an 'ImmortalQueue' for your task type and queue backend. Then
+you can launch the pool using 'processImmortalQueue' and stop the pool with
+'closeImmortalQueue'.
+
+> import Control.Concurrent.STM (atomically)
+> import Control.Concurrent.STM.TQueue
+> import Control.Exception (Exception)
+> import Control.Immortal.Queue
+>
+> data Task
+>     = Print String
+>     deriving (Show)
+>
+> queueConfig :: TQueue Task -> ImmortalQueue Task
+> queueConfig queue =
+>     ImmortalQueue
+>         { qThreadCount = 2
+>         , qPollWorkerTime = 1000
+>         , qPop = atomically $ readTQueue queue
+>         , qPush = atomically . writeTQueue queue
+>         , qHandler = performTask
+>         , qFailure = printError
+>         }
+>   where
+>     performTask :: Task -> IO ()
+>     performTask t = case t of
+>         Print str ->
+>             putStrLn str
+>     printError :: Exception e => Task -> e -> IO ()
+>     printError t err =
+>         let description = case t of
+>                 Print str ->
+>                     "print"
+>         in  putStrLn $ "Task `" ++ description ++ "` failed with: " ++ show err
+>
+> main :: IO ()
+> main = do
+>     queue <- newTQueueIO
+>     workers <- processImmortalQueue $ queueConfig queue
+>     atomically $ mapM_ (writeTQueue queue . Print) ["hello", "world"]
+>     closeImmortalQueue workers
+
 -}
 module Control.Immortal.Queue
     ( -- * Config
@@ -52,10 +94,10 @@ data ImmortalQueue a =
         , qPollWorkerTime :: Int
         -- ^ Wait time in milliseconds for polling for a free worker.
         , qPop :: IO a
-        -- ^ An blocking action to pop the next item off of the queue.
+        -- ^ A blocking action to pop the next item off of the queue.
         , qPush :: a -> IO ()
-        -- ^ An action to put an item on the queue. Used during shutdown if
-        -- we've popped an item but haven't assigned it to a worker yet.
+        -- ^ An action to enqueue a task. Used during shutdown if we've
+        -- popped an item but haven't assigned it to a worker yet.
         , qHandler :: a -> IO ()
         -- ^ The handler to perform a queued task.
         , qFailure :: forall e. Exception e => a -> e -> IO ()
@@ -161,7 +203,9 @@ data WorkerData a =
 data QueueId =
     QueueId
         { qiCloseCleanly :: MVar Bool
+        -- ^ Signal to close the queue cleanly or immediately.
         , qiAsyncQueue :: Async ()
+        -- ^ The pool's management thread.
         }
 
 

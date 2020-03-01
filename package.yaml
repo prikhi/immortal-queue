@@ -29,9 +29,18 @@ synopsis:
     Build a pool of queue-processing worker threads.
 
 description: |
-    Longer description of package here.
+    @immortal-queue@ is a library for build an asynchronous worker pool that
+    processes action from a generic queue. You can use any thread-safe datatype
+    with a push and pop like a @TQueue@ or a @persistent@ database table.
 
-    Maybe include a simple usage example.
+    The worker pool is configured by building an @ImmortalQueue@ type, which
+    describes how to push and pop from the queue as well as how to process
+    items and handle errors.
+
+    For a simple usage example using a TQueue, see the module documentation.
+    For a more complex example that uses a @persistent@ database as a queue,
+    see
+    <https://github.com/Southern-Exposure-Seed-Exchange/southernexposure.com/blob/develop/server/src/Workers.hs Southern Exposure's website code>.
 
 
 ghc-options:
