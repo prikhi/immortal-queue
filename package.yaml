@@ -51,7 +51,8 @@ library:
     source-dirs:
         src
     dependencies:
-        []
+        - async
+        - immortal
 
 tests:
     immortal-queue-test:
