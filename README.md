@@ -1,5 +1,8 @@
 # Immortal Queue
 
+[![immortal-queue Build Status](https://travis-ci.org/prikhi/immortal-queue.svg?branch=master)](https://travis-ci.org/prikhi/immortal-queue)
+
+
 A Haskell library for building a pool of queue-processing worker threads,
 leveraging the [immortal][immortal] package.
 
