@@ -1,0 +1,70 @@
+---
+
+name:
+    immortal-queue
+version:
+    0.1.0.0
+github:
+    prikhi/immortal-queue
+homepage:
+    https://github.com/prikhi/immortal-queue#readme
+license:
+    BSD3
+license-file:
+    LICENSE
+author:
+    Pavan Rikhi
+maintainer:
+    pavan.rikhi@gmail.com
+copyright:
+    2020 Pavan Rikhi
+category:
+    Concurrency
+extra-source-files:
+    - README.md
+    - CHANGELOG.md
+
+
+synopsis:
+    Build a pool of queue-processing worker threads.
+
+description: |
+    Longer description of package here.
+
+    Maybe include a simple usage example.
+
+
+ghc-options:
+    - -Wall
+    - -Wcompat
+    - -Wincomplete-record-updates
+    - -Wincomplete-uni-patterns
+    - -Wredundant-constraints
+    - -O2
+
+
+dependencies:
+    - base >= 4.7 && < 5
+
+
+library:
+    source-dirs:
+        src
+    dependencies:
+        []
+
+tests:
+    immortal-queue-test:
+        main: Spec.hs
+        source-dirs:
+            tests
+        ghc-options:
+            - -threaded
+            - -rtsopts
+            - -with-rtsopts "-N -T"
+        dependencies:
+            - immortal-queue
+            - hedgehog
+            - tasty
+            - tasty-hedgehog
+            - tasty-hunit
