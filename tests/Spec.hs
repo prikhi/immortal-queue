@@ -1,10 +1,7 @@
-import           Hedgehog
 import           Test.Tasty
 import           Test.Tasty.HUnit
-import           Test.Tasty.Hedgehog
 
-import qualified Hedgehog.Gen                  as Gen
-import qualified Hedgehog.Range                as Range
+import           MockQueue
 
 
 main :: IO ()
@@ -12,23 +9,40 @@ main = defaultMain tests
 
 
 tests :: TestTree
-tests = testGroup "Tests" [unitTests, properties]
-
-
-unitTests :: TestTree
-unitTests = testGroup "Unit Tests" [testCase "2+2 = 4" testAddition]
+tests = testGroup
+    "Immortal Queue Tests"
+    [ testCase "All Succeed"                    allSuccess
+    , testCase "Error Handling"                 errorHandling
+    , testCase "Close Waits For Workers"        closeWaits
+    , testCase "Kill Stops Workers Immediately" killExitsEarly
+    ]
   where
-    testAddition :: Assertion
-    testAddition = (2 + 2) @?= (4 :: Integer)
+    allSuccess :: Assertion
+    allSuccess = do
+        (successes, failures) <- runPool
+            [Log 1 100, Log 2 200, Log 3 300, Log 4 400, Log 5 500]
+        successes @?= [1, 2, 3, 4, 5]
+        failures @?= []
 
+    errorHandling :: Assertion
+    errorHandling = do
+        (successes, failures) <- runPool
+            [Log 1 0, Fail "hello", Log 2 0, Fail "world", Fail "9001"]
+        successes @?= [1, 2]
+        failures @?= ["hello", "world", "9001"]
 
-properties :: TestTree
-properties = testGroup
-    "Properties"
-    [testProperty "Addition is Communative" testAdditionCommunative]
-  where
-    testAdditionCommunative :: Property
-    testAdditionCommunative = property $ do
-        let genInt = Gen.int $ Range.linear 0 9001
-        (a, b) <- forAll $ (,) <$> genInt <*> genInt
-        (a + b) === (b + a)
+    closeWaits :: Assertion
+    closeWaits = do
+        (successes, failures) <- runPool_ True
+                                          (Just 200)
+                                          [Log 1 50, Log 2 100, Log 3 1000]
+        successes @?= [1, 2, 3]
+        failures @?= []
+
+    killExitsEarly :: Assertion
+    killExitsEarly = do
+        (successes, failures) <- runPool_ False
+                                          (Just 200)
+                                          [Log 1 50, Log 2 100, Log 3 1000]
+        successes @?= [1, 2]
+        failures @?= []

@@ -60,8 +60,8 @@ library:
     source-dirs:
         src
     dependencies:
-        - async
-        - immortal
+        - async >= 2 && < 3
+        - immortal < 1 && >= 0.2
 
 tests:
     immortal-queue-test:
@@ -74,7 +74,6 @@ tests:
             - -with-rtsopts "-N -T"
         dependencies:
             - immortal-queue
-            - hedgehog
+            - stm
             - tasty
-            - tasty-hedgehog
             - tasty-hunit
