@@ -71,6 +71,12 @@ library:
     dependencies:
         - async >= 2 && < 3
         - immortal < 1 && >= 0.2.1
+    when:
+        condition:
+            impl(ghc < 8.0)
+        dependencies:
+            - nats >= 1 && < 2
+
 
 tests:
     immortal-queue-test:
