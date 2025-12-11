@@ -27,6 +27,7 @@ you can launch the pool using 'processImmortalQueue' and stop the pool with
 >         , qPush = atomically . writeTQueue queue
 >         , qHandler = performTask
 >         , qFailure = printError
+>         , qPopFailure = \e -> putStrLn $ "Unexpected pop failure: " <> show e
 >         }
 >   where
 >     performTask :: Task -> IO ()
@@ -72,10 +73,13 @@ import           Control.Concurrent             ( MVar
 import           Control.Concurrent.Async       ( Async
                                                 , async
                                                 , wait
+                                                , waitCatch
                                                 , race
                                                 , cancel
                                                 )
-import           Control.Exception              ( Exception )
+import           Control.Exception              ( Exception
+                                                , SomeException
+                                                )
 import           Control.Immortal               ( Thread )
 import           Control.Monad                  ( (>=>)
                                                 , forever
@@ -101,8 +105,12 @@ data ImmortalQueue a =
         , qHandler :: a -> IO ()
         -- ^ The handler to perform a queued task.
         , qFailure :: forall e. Exception e => a -> e -> IO ()
-        -- ^ An error handler for when a thread encounters an unhandled
-        -- exception.
+        -- ^ An error handler for when a processing thread encounters an
+        -- unhandled exception.
+        , qPopFailure :: SomeException -> IO ()
+        -- ^ An error handler for when the queue popping thread encounters
+        -- an unhandled exception. The popping thread will be restarted
+        -- after this is run.
         }
 
 -- | Start a management thread that creates the queue-processing worker
@@ -110,21 +118,30 @@ data ImmortalQueue a =
 processImmortalQueue :: forall a . ImmortalQueue a -> IO QueueId
 processImmortalQueue queue = do
     shutdown   <- newEmptyMVar
-    asyncQueue <- async $ do
-        threads          <- mapM (const makeWorker) [1 .. qThreadCount queue]
-        nextAction       <- newEmptyMVar
-        asyncQueuePopper <- async $ popQueue nextAction threads
-        cleanClose       <- takeMVar shutdown
-        cancel asyncQueuePopper
-        if cleanClose
-            then do
-                mapM_ (Immortal.mortalize . wdThread) threads
-                mapM_ (flip putMVar () . wdCloseMVar) threads
-            else mapM_ (Immortal.stop . wdThread) threads
-        mapM_ (Immortal.wait . wdThread) threads
-        tryTakeMVar nextAction >>= \case
-            Nothing     -> return ()
-            Just action -> qPush queue action
+    threads    <- mapM (const makeWorker) [1 .. qThreadCount queue]
+    nextAction <- newEmptyMVar
+    let manageQueuePopper = do
+            asyncQueuePopper <- async $ popQueue nextAction threads
+            finishAction     <- takeMVar shutdown `race` waitCatch asyncQueuePopper
+            case finishAction of
+                Left cleanClose -> do
+                    cancel asyncQueuePopper
+                    if cleanClose
+                        then do
+                            mapM_ (Immortal.mortalize . wdThread) threads
+                            mapM_ (flip putMVar () . wdCloseMVar) threads
+                        else mapM_ (Immortal.stop . wdThread) threads
+                    mapM_ (Immortal.wait . wdThread) threads
+                    tryTakeMVar nextAction >>= \case
+                        Nothing     -> return ()
+                        Just action -> qPush queue action
+                Right (Left e) -> do
+                    qPopFailure queue e
+                    manageQueuePopper
+                Right (Right ()) -> do
+                    manageQueuePopper
+    asyncQueue <- async manageQueuePopper
+
     return QueueId { qiCloseCleanly = shutdown, qiAsyncQueue = asyncQueue }
   where
     -- Create the communication MVars for a worker & then start the
