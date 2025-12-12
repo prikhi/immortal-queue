@@ -3,7 +3,7 @@
 name:
     immortal-queue
 version:
-    0.1.0.1
+    0.2.0.0
 github:
     prikhi/immortal-queue
 homepage:
@@ -17,7 +17,7 @@ author:
 maintainer:
     pavan.rikhi@gmail.com
 copyright:
-    2020 Pavan Rikhi
+    2020-2025 Pavan Rikhi
 category:
     Concurrency
 extra-source-files:

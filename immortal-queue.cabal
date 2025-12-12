@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 54e8afad36ddfd2d37c9a61dafe3719c61415ede2679980514dc249056017ae1
+-- hash: 39cceb7713d23b85fd53f67a2cf6156f99d4691c2a3deed4a56873542beff9eb
 
 name:           immortal-queue
-version:        0.1.0.1
+version:        0.2.0.0
 synopsis:       Build a pool of queue-processing worker threads.
 description:    @immortal-queue@ is a library for build an asynchronous worker pool that
                 processes action from a generic queue. You can use any thread-safe datatype
@@ -26,7 +26,7 @@ homepage:       https://github.com/prikhi/immortal-queue#readme
 bug-reports:    https://github.com/prikhi/immortal-queue/issues
 author:         Pavan Rikhi
 maintainer:     pavan.rikhi@gmail.com
-copyright:      2020 Pavan Rikhi
+copyright:      2020-2025 Pavan Rikhi
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple

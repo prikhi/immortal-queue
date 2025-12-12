@@ -2,6 +2,9 @@
 
 ## master
 
+
+# v0.2.0.0
+
 * Catch errors thrown during popping, add new `qPopFailure` config field to
   handle them and then restart the item popper.
 
